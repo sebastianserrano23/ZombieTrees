@@ -18,7 +18,14 @@ python main.py
 
 ## Play in a browser
 
-The game also compiles to WebAssembly, so it can be played from a link with nothing to install:
+**Play it here: https://sebastianserrano23.github.io/ZombieTrees/**
+
+That page redeploys itself: `.github/workflows/deploy.yml` rebuilds the WebAssembly version and
+publishes it to GitHub Pages on every push to `main`, so `git push` is the only step. Progress and
+failures show up in the repository's **Actions** tab. (One-time setup, if you fork this:
+**Settings → Pages → Source → GitHub Actions**.)
+
+To build it yourself:
 
 ```bash
 pip install pygbag

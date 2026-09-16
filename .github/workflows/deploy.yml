@@ -1,0 +1,55 @@
+# Rebuilds the browser version of the game and publishes it to GitHub Pages.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]      # every push to main redeploys the site
+  workflow_dispatch:      # ...and you can also run it by hand from the Actions tab
+
+# The deploy job needs permission to publish Pages on your behalf. GitHub hands
+# the job a short-lived token with exactly these rights and nothing more.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# If two pushes land close together, cancel the older deploy and let the newer win.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest      # a fresh Linux machine, thrown away afterwards
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pygbag
+        run: pip install pygbag==0.9.3
+
+      # PYTHON=python because the script defaults to the local .venv, which
+      # doesn't exist here: the runner has its own clean Python.
+      - name: Build the WebAssembly version
+        run: PYTHON=python ./build_web.sh
+
+      - name: Upload the built site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build                # only runs if the build job succeeded
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
