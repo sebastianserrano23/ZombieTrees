@@ -2,7 +2,7 @@ import math
 
 import pygame
 
-from .settings import SCREEN_H, SCREEN_W
+from .settings import SCREEN_H, SCREEN_W, WEB
 from .weapons import SHORT_NAMES
 
 
@@ -275,6 +275,8 @@ class HUD:
             ("1-6 / WHEEL", "switch weapon"), ("Q", "last weapon"), ("R", "reload"), ("M", "minimap"),
             ("ESC", "pause"),
         ]
+        if WEB:
+            lines[2] = ("MOUSE", "steer left / right")
         for i, (k, v) in enumerate(lines):
             col, row = i % 3, i // 3
             x = box.x + (24, 250, 540)[col]

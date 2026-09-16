@@ -9,6 +9,24 @@ from array import array
 import pygame
 
 
+class NullSound:
+    """Stand-in used before audio is allowed to start (browsers need a user gesture first)."""
+
+    enabled = False
+
+    def play(self, *args, **kwargs):
+        pass
+
+    def play_at(self, *args, **kwargs):
+        pass
+
+    def loop(self, *args, **kwargs):
+        pass
+
+    def stop_loop(self, *args, **kwargs):
+        pass
+
+
 class SoundBank:
     def __init__(self):
         self.enabled = False
@@ -16,6 +34,7 @@ class SoundBank:
         self.loop_name = None
         self.rng = random.Random(99)
         try:
+            import pygame.mixer  # noqa: F401  (not auto-imported in every pygame build)
             if not pygame.mixer.get_init():
                 pygame.mixer.init(22050, -16, 2, 512)
             self.freq, fmt, self.channels = pygame.mixer.get_init()
@@ -29,7 +48,7 @@ class SoundBank:
             self.loop_ch = pygame.mixer.Channel(0)
             self._build()
             self.enabled = True
-        except (pygame.error, OSError):
+        except (pygame.error, OSError, AttributeError, ImportError):
             self.enabled = False
 
     # ------------------------------------------------------------ playback

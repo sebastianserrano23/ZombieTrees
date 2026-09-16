@@ -2,7 +2,7 @@ import math
 
 import pygame
 
-from .settings import MOUSE_SENS, PLAYER_MAX_HP, PLAYER_RADIUS, PLAYER_SPEED, PLAYER_SPRINT, TURN_SPEED
+from .settings import PLAYER_MAX_HP, PLAYER_RADIUS, PLAYER_SPEED, PLAYER_SPRINT, TURN_SPEED
 
 RISE_TIME = 0.9
 BURN_DPS = 14.0
@@ -53,8 +53,8 @@ class Player:
         self.hurt_timer = 0.0
         self.shake = 0.0
 
-    def update(self, dt, keys, world, mouse_dx):
-        self.angle += mouse_dx * MOUSE_SENS
+    def update(self, dt, keys, world, turn):
+        self.angle += turn  # radians already; the game decides mouse vs. cursor steering
         if keys[pygame.K_LEFT]:
             self.angle -= TURN_SPEED * dt
         if keys[pygame.K_RIGHT]:

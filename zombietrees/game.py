@@ -1,3 +1,4 @@
+import asyncio
 import json
 import math
 import random
@@ -8,8 +9,9 @@ from .art import TREE_STYLES, Art
 from .entities import Corpse, Enemy, Particle, Pickup, Player, Spit, wave_roster, wave_scaling
 from .hud import HUD
 from .renderer import Renderer
-from .settings import (FPS, MAX_CORPSES, MAX_PARTICLES, PLAYER_RADIUS, SAVE_FILE, SCREEN_H, SCREEN_W, TITLE)
-from .sound import SoundBank
+from .settings import (FPS, MAX_CORPSES, MAX_PARTICLES, MOUSE_SENS, PLAYER_RADIUS, SAVE_FILE, SCREEN_H,
+                       SCREEN_W, TITLE, WEB, WEB_TURN_RATE)
+from .sound import NullSound, SoundBank
 from .weapons import WEAPONS, Arsenal
 from .world import World, cast_ray
 
@@ -33,7 +35,10 @@ class Message:
 
 class Game:
     def __init__(self):
-        pygame.mixer.pre_init(22050, -16, 2, 512)
+        try:
+            pygame.mixer.pre_init(22050, -16, 2, 512)
+        except Exception:
+            pass  # some builds (e.g. the browser) have no mixer; the game just runs silently
         pygame.init()
         pygame.display.set_caption(TITLE)
         self.screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
@@ -42,7 +47,9 @@ class Game:
         self._loading_screen()
 
         self.art = Art()
-        self.sound = SoundBank()
+        # Browsers refuse to start audio until the player interacts, so on web we
+        # build the sound bank on the first click instead.
+        self.sound = NullSound() if WEB else SoundBank()
         self.renderer = Renderer(self.art)
         self.hud = HUD()
         self.rng = random.Random()
@@ -105,6 +112,8 @@ class Game:
             self.enemies.append(e)
 
     def start_game(self):
+        if WEB and isinstance(self.sound, NullSound):
+            self.sound = SoundBank()
         self.reset()
         self.state = "playing"
         self._set_grab(True)
@@ -138,9 +147,26 @@ class Game:
 
     @staticmethod
     def _set_grab(on):
+        if WEB:
+            # No pointer lock in the browser build: the cursor stays visible and steers the view.
+            pygame.mouse.set_visible(True)
+            return
         pygame.event.set_grab(on)
         pygame.mouse.set_visible(not on)
         pygame.mouse.get_rel()
+
+    @staticmethod
+    def _look_turn(dt):
+        """How far to turn this frame, in radians."""
+        if not WEB:
+            return pygame.mouse.get_rel()[0] * MOUSE_SENS
+        off = pygame.mouse.get_pos()[0] - SCREEN_W / 2
+        dead = 40
+        if abs(off) <= dead:
+            return 0.0
+        span = SCREEN_W / 2 - dead
+        steer = max(-1.0, min(1.0, (off - math.copysign(dead, off)) / span))
+        return steer * WEB_TURN_RATE * dt
 
     def _load_best(self):
         try:
@@ -159,7 +185,7 @@ class Game:
 
     # ------------------------------------------------------------ main loop
 
-    def run(self):
+    async def run(self):
         while self.running:
             dt = min(self.clock.tick(FPS) / 1000.0, 0.05)
             self.handle_events()
@@ -174,6 +200,7 @@ class Game:
                 self.gameover_timer += dt
                 self.update_particles(dt)
             self.draw()
+            await asyncio.sleep(0)  # hands control back to the browser each frame
         self.sound.stop_loop()
         pygame.quit()
 
@@ -241,9 +268,8 @@ class Game:
     def update_playing(self, dt):
         self.time += dt
         keys = pygame.key.get_pressed()
-        mdx, _ = pygame.mouse.get_rel()
         p = self.player
-        p.update(dt, keys, self.world, mdx)
+        p.update(dt, keys, self.world, self._look_turn(dt))
         self.world.update_flow(p.x, p.y)
         self.arsenal.update(dt)
         self.update_weapon(dt)

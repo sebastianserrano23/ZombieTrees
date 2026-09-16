@@ -16,6 +16,28 @@ pip install -r requirements.txt
 python main.py
 ```
 
+## Play in a browser
+
+The game also compiles to WebAssembly, so it can be played from a link with nothing to install:
+
+```bash
+pip install pygbag
+./build_web.sh          # produces build/web.zip
+```
+
+Upload `build/web.zip` to [itch.io](https://itch.io) as a project with **Kind of project: HTML**, tick
+*This file will be played in the browser*, and set the viewport to **960 x 600**.
+
+To try the web version locally first:
+
+```bash
+python -m http.server --directory build/web 8000   # then open http://localhost:8000
+```
+
+In the browser version you steer by moving the cursor left or right of the screen centre, because
+browsers don't hand over the mouse the way a desktop game does. Everything else is the same, though
+it runs a little slower and casts fewer rays to compensate.
+
 ## Controls
 
 | Key | Action |
