@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "python3 -m venv /tmp/pyenv && /tmp/pyenv/bin/pip install pygbag==0.9.3",
+  "buildCommand": "PYTHON=/tmp/pyenv/bin/python ./build_web.sh",
+  "outputDirectory": "build/web"
+}

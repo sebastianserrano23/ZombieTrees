@@ -18,7 +18,8 @@ fi
 # that has no .venv or build output in it (the folder name becomes the app name).
 rm -rf build/zombietrees build/web build/web.zip
 mkdir -p build/zombietrees
-rsync -a --exclude __pycache__ main.py zombietrees build/zombietrees/
+cp -R main.py zombietrees build/zombietrees/
+find build/zombietrees -name __pycache__ -type d -prune -exec rm -rf {} +
 
 "$PY" -m pygbag --build --archive --ume_block 0 \
     --title "Zombie Trees" --width 960 --height 600 \

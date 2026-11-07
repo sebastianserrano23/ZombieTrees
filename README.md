@@ -18,12 +18,12 @@ python main.py
 
 ## Play in a browser
 
-**Play it here: https://sebastianserrano23.github.io/ZombieTrees/**
+The browser version is hosted on [Vercel](https://vercel.com). `vercel.json` tells Vercel how to build it
+(install pygbag, run `build_web.sh`, serve `build/web`), so every push to `main` redeploys the site.
 
-That page redeploys itself: `.github/workflows/deploy.yml` rebuilds the WebAssembly version and
-publishes it to GitHub Pages on every push to `main`, so `git push` is the only step. Progress and
-failures show up in the repository's **Actions** tab. (One-time setup, if you fork this:
-**Settings → Pages → Source → GitHub Actions**.)
+One-time setup: sign in to Vercel with GitHub, choose **Add New → Project**, import this repository and
+click **Deploy**. The defaults from `vercel.json` are already filled in. You get a link like
+`https://zombietrees.vercel.app` that anyone can open.
 
 To build it yourself:
 
