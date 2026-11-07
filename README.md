@@ -38,12 +38,11 @@ Upload `build/web.zip` to [itch.io](https://itch.io) as a project with **Kind of
 To try the web version locally first:
 
 ```bash
-python -m http.server --directory build/web 8000   # then open http://localhost:8000
+python -m http.server --directory build/web 8000   # then open http://127.0.0.1:8000 (not "localhost": pygbag treats that as its own dev server)
 ```
 
-In the browser version you steer by moving the cursor left or right of the screen centre, because
-browsers don't hand over the mouse the way a desktop game does. Everything else is the same, though
-it runs a little slower and casts fewer rays to compensate.
+In the browser, click the game to capture the mouse, then aim just like the desktop version. `Esc`
+releases the mouse and pauses; click to jump back in.
 
 ## Controls
 

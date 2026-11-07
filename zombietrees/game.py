@@ -10,10 +10,11 @@ from .entities import Corpse, Enemy, Particle, Pickup, Player, Spit, wave_roster
 from .hud import HUD
 from .renderer import Renderer
 from .settings import (FPS, MAX_CORPSES, MAX_PARTICLES, MOUSE_SENS, PLAYER_RADIUS, SAVE_FILE, SCREEN_H,
-                       SCREEN_W, TITLE, WEB, WEB_TURN_RATE)
+                       SCREEN_W, TITLE, WEB)
 from .sound import NullSound, SoundBank
 from .weapons import WEAPONS, Arsenal
 from .world import World, cast_ray
+from . import web
 
 SAP = (96, 210, 60)
 NEW_ENEMY_INTROS = {
@@ -43,6 +44,8 @@ class Game:
         pygame.display.set_caption(TITLE)
         self.screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
         self.scaled = pygame.Surface((SCREEN_W, SCREEN_H)).convert()
+        web.setup_canvas()
+        self.mouse_locked = False
         self.clock = pygame.time.Clock()
         self._loading_screen()
 
@@ -145,28 +148,27 @@ class Game:
         self.best["kills"] = max(self.best["kills"], self.kills)
         self._save_best()
 
-    @staticmethod
-    def _set_grab(on):
+    def _set_grab(self, on):
+        self.mouse_locked = False
         if WEB:
-            # No pointer lock in the browser build: the cursor stays visible and steers the view.
-            pygame.mouse.set_visible(True)
+            web.set_mouse_capture(on)
             return
         pygame.event.set_grab(on)
         pygame.mouse.set_visible(not on)
         pygame.mouse.get_rel()
 
     @staticmethod
-    def _look_turn(dt):
+    def _look_turn():
         """How far to turn this frame, in radians."""
-        if not WEB:
-            return pygame.mouse.get_rel()[0] * MOUSE_SENS
-        off = pygame.mouse.get_pos()[0] - SCREEN_W / 2
-        dead = 40
-        if abs(off) <= dead:
-            return 0.0
-        span = SCREEN_W / 2 - dead
-        steer = max(-1.0, min(1.0, (off - math.copysign(dead, off)) / span))
-        return steer * WEB_TURN_RATE * dt
+        return pygame.mouse.get_rel()[0] * MOUSE_SENS
+
+    def _watch_pointer_lock(self):
+        # In the browser, Esc releases the mouse without the game ever seeing the key,
+        # so notice the lock going away and pause, just like pressing Esc on desktop.
+        if web.pointer_locked():
+            self.mouse_locked = True
+        elif self.mouse_locked:
+            self.pause()
 
     def _load_best(self):
         try:
@@ -189,6 +191,8 @@ class Game:
         while self.running:
             dt = min(self.clock.tick(FPS) / 1000.0, 0.05)
             self.handle_events()
+            if WEB and self.state == "playing":
+                self._watch_pointer_lock()
             if self.state == "playing":
                 self.update_playing(dt)
             elif self.state == "menu":
@@ -269,7 +273,7 @@ class Game:
         self.time += dt
         keys = pygame.key.get_pressed()
         p = self.player
-        p.update(dt, keys, self.world, self._look_turn(dt))
+        p.update(dt, keys, self.world, self._look_turn())
         self.world.update_flow(p.x, p.y)
         self.arsenal.update(dt)
         self.update_weapon(dt)
@@ -661,6 +665,9 @@ class Game:
 
         if self.state == "playing":
             self.hud.draw_play(self.screen, self)
+            if WEB and not self.mouse_locked:
+                self.hud.text(self.screen, "CLICK TO CAPTURE THE MOUSE", self.hud.f_small, (245, 220, 120),
+                              (SCREEN_W // 2, SCREEN_H // 2 + 60), "midtop")
         elif self.state == "paused":
             self.hud.draw_play(self.screen, self)
             self.hud.draw_pause(self.screen, self)
